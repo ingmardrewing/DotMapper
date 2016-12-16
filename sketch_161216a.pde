@@ -21,9 +21,17 @@ class Connection {
   Dot end_dot;
   PShape line;
   
+  int distance = 2;
+  
   Connection( Dot start_dot_param, Dot end_dot_param ){
     start_dot = start_dot_param;
     end_dot = end_dot_param;
+  }
+  
+  Connection( Dot start_dot_param, Dot end_dot_param, int distance_param ){
+    start_dot = start_dot_param;
+    end_dot = end_dot_param;
+    distance = distance_param;
   }
   
   void draw (){
@@ -37,7 +45,7 @@ class Connection {
   PVector getMarginalPoint (Dot d1, Dot d2) {
     PVector v = PVector.sub(d2.pos, d1.pos);
     v.normalize();
-    v.mult(d1.r + 2);
+    v.mult(d1.r + distance);
     return PVector.add(d1.pos , v);
   }
   
@@ -57,6 +65,11 @@ class Dot {
   
   Dot ( int x_param, int y_param ){
     pos = new PVector( x_param, y_param );
+  }
+  
+  Dot ( int x_param, int y_param, int radius_param ){
+    pos = new PVector( x_param, y_param );
+    r = radius_param;
   }
   
   void draw (){
