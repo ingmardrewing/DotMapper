@@ -29,6 +29,15 @@ class Disease {
     color[] colors = {red, green, blue};
     c = colors[ floor( random(colors.length)) ] ;
   }
+  
+  void sicken( Person person ){
+    person.c = c;
+    person.life -= severity;
+  }
+  
+  void sicken( Connection connection ){
+    connection.c = c;
+  }
 }
 
 class Population {
@@ -93,6 +102,7 @@ class Population {
     
   void check_for_infection(){
     if( frames_until_infection-- < 1 ){
+      print("infecting\n");
       Disease disease = new Disease();
       persons[ floor( random(persons.length)) ].infect(disease) ;
       frames_until_infection = 200;
@@ -145,16 +155,18 @@ class Person {
   
   void infect (Disease d){
     disease = d;
-    c = d.c;
-    infected = true;
+  }
+  
+  boolean is_infected (){
+    return null != disease ;
   }
 
   void check_health(){
-    if( infected ){
+    if( is_infected() ){
+      disease.sicken( this );
       if( life < 1 ){
         alive = false;
       }
-      life -= disease.severity;
     }
   }
   
@@ -168,12 +180,12 @@ class Person {
       flee( b );
       Connection c = new Connection( this, b );
       
-      if( infected ){
+      if( is_infected() ){
         b.infect(disease);
         c.infect(disease);
       }
       
-      if( b.infected ){
+      if( b.is_infected() ){
         infect( b.disease );
         c.infect( b.disease );
       }
@@ -183,6 +195,9 @@ class Person {
   }
   
   void draw (){
+    if( null != disease ){
+      disease.sicken(this);
+    }
     PShape circle = createShape( ELLIPSE, pos.x, pos.y, r, r);
     circle.setFill( c );
     circle.setStroke( c );
@@ -197,6 +212,7 @@ class Connection {
   Person end_person;
   PShape line;
   color c;
+  Disease disease;
   
   int distance = 2;
   boolean infected = false;
@@ -208,11 +224,13 @@ class Connection {
   }
   
   void infect(Disease d){
-    infected = true;
-    c = d.c;
+    disease = d;
   }
   
   void draw (){
+    if( null != disease ){
+      disease.sicken(this);
+    }
     PVector v1 = getStartingPoint();
     PVector v2 = getEndPoint();
     line = createShape( LINE, v1.x, v1.y, v2.x, v2.y );
