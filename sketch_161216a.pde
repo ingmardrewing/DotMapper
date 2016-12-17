@@ -1,4 +1,4 @@
-color grey = color(153);
+color grey = color(204);
 color black = color(0);
 color red = color(204, 0, 0);
 color blue = color(0, 0, 204);
@@ -111,6 +111,8 @@ class Person {
   float r = 5.0;
   Disease disease;
   
+  color c = black;
+  
   Person ( float x_param, float y_param ){
     pos = new PVector( x_param, y_param );
   }
@@ -143,6 +145,7 @@ class Person {
   
   void infect (Disease d){
     disease = d;
+    c = d.c;
     infected = true;
   }
 
@@ -174,14 +177,13 @@ class Person {
         infect( b.disease );
         c.infect( b.disease );
       }
-      
+           
       c. draw();
+    }
   }
-}
   
   void draw (){
     PShape circle = createShape( ELLIPSE, pos.x, pos.y, r, r);
-    color c = infected ? disease.c : black;
     circle.setFill( c );
     circle.setStroke( c );
     shape( circle );
@@ -202,6 +204,7 @@ class Connection {
   Connection( Person start_person_param, Person end_person_param ){
     start_person = start_person_param;
     end_person = end_person_param;
+    c = black;
   }
   
   void infect(Disease d){
@@ -213,7 +216,7 @@ class Connection {
     PVector v1 = getStartingPoint();
     PVector v2 = getEndPoint();
     line = createShape( LINE, v1.x, v1.y, v2.x, v2.y );
-    stroke( c );
+    line.setStroke(c);
     shape(line);
   }
   
