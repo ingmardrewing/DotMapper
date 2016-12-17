@@ -1,19 +1,67 @@
-void setup(){
-  size(600,600);
-  smooth(8);
-}
+color grey;
+color black;
+Dots dots;
 
-color grey = color(153);
-color black = color(0);
+void setup(){
+  size(300,300);
+  smooth(8);
+  grey = color(153);
+  black = color(0);
+  dots = new Dots();
+      
+
+}
 
 void draw(){
  background (grey);
- Dot d1 = new Dot( 184, 234 );
- Dot d2 = new Dot( 387, 100 );
+ for( Dot i : dots.dots ){
+    i.draw();
+ }
+ /*
+ 
  Connection c1 = new Connection( d1, d2);
  d1.draw();
  d2.draw();
  c1.draw();
+ */
+}
+
+class Dots {
+  int amount = 20;
+  float padding = 10;
+  Dot[] dots;
+  
+  Dots( int amount_param ){
+    amount = amount_param;
+    init();
+  }
+  
+  Dots(){
+    init();
+  } 
+
+  void init(){
+    dots = new Dot[amount];
+    populate();
+  }
+  
+  float next_x(){
+    return get_random_num( width );
+  }
+  
+  float next_y () {
+    return get_random_num( height );
+  }
+  
+  float get_random_num ( float max ){
+    return random( max - 2 * padding) + padding ;
+  }
+  
+  void populate(){
+    for( int i=0; i < dots.length; i++ ){
+      dots[i] = new Dot( next_x(), next_y() );
+    }
+  }
 }
 
 class Connection {
@@ -60,14 +108,14 @@ class Connection {
 
 
 class Dot {
-  PVector pos = new PVector(0,0);
-  int r = 5;
+  PVector pos = new PVector(0 , 0);
+  float r = 5.0;
   
-  Dot ( int x_param, int y_param ){
+  Dot ( float x_param, float y_param ){
     pos = new PVector( x_param, y_param );
   }
   
-  Dot ( int x_param, int y_param, int radius_param ){
+  Dot ( float x_param, float y_param, float radius_param ){
     pos = new PVector( x_param, y_param );
     r = radius_param;
   }
