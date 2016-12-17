@@ -2,54 +2,89 @@ color grey = color(153);
 color black = color(0);
 color red = color(204, 0, 0);
 
-Dots dots;
+Disease disease;
+Population population;
+
 float min_distance = 30.0;
 
 void setup(){
   size(600,600);
   smooth(8);
-  int amount = 180;
-  dots = new Dots(amount);
-  dots.dots[ floor( random(amount)) ].infect() ;
   
+  disease = new Disease();
+  population = new Population( 200 );
+  disease.set_population(population);
 }
+
+
 
 void draw(){
  background (grey);
- for( Dot i : dots.dots ){
-    for( Dot j: dots.dots ){
-      if( i.pos.dist(j.pos) < min_distance ){
-        i.wander();
-        i.flee( j );
-        i.bounce();
-        Connection c = new Connection( i, j );
-        if( i.infected || j.infected ){
-          j.infect();
-          i.infect();
-          c.infect();
+ disease.check_for_infection();
+ for( Person i : population.persons ){
+   if ( ! i.dead ){
+    for( Person j: population.persons ){
+      if( ! j.dead ){
+        if( i.pos.dist(j.pos) < min_distance ){
+          i.wander();
+          i.flee( j );
+          i.bounce();
+          Connection c = new Connection( i, j );
+          if( i.infected || j.infected ){
+            j.infect();
+            i.infect();
+            c.infect();
+          }
+          c. draw();
         }
-        c. draw();
       }
     }
+   i.check_health();
    i.draw();
+   }
  }
 }
 
-class Dots {
-  int amount = 20;
-  Dot[] dots;
+class Disease {
+  int severity = 1;
+  int frames_until_infection = 200;
+  Population population;
   
-  Dots( int amount_param ){
-    amount = amount_param;
+  void set_frames_until_infection(int frames_param ){
+    frames_until_infection = frames_param;
+  }
+  
+  void set_severity( int severity_param ){
+    severity = severity_param;
+  }
+  
+  void set_population( Population population_param ){
+    population = population_param;
+  }
+  
+  void check_for_infection(){
+  if( frames_until_infection-- < 1 ){
+    population.persons[ floor( random(population.size)) ].infect() ;
+    frames_until_infection = 200;
+  }
+}
+}
+
+class Population {
+  int size = 20;
+  Person[] persons;
+  
+  Population( int size_param ){
+    size = size_param;
     init();
   }
   
-  Dots(){
+  Population(){
     init();
   } 
 
   void init(){
-    dots = new Dot[amount];
+    persons = new Person[size];
     populate();
   }
   
@@ -66,29 +101,23 @@ class Dots {
   }
   
   void populate(){
-    for( int i=0; i < dots.length; i++ ){
-      dots[i] = new Dot( next_x(), next_y() );
+    for( int i=0; i < persons.length; i++ ){
+      persons[i] = new Person( next_x(), next_y() );
     }
   }
 }
 
 class Connection {
-  Dot start_dot;
-  Dot end_dot;
+  Person start_person;
+  Person end_person;
   PShape line;
   
   int distance = 2;
   boolean infected = false;
   
-  Connection( Dot start_dot_param, Dot end_dot_param ){
-    start_dot = start_dot_param;
-    end_dot = end_dot_param;
-  }
-  
-  Connection( Dot start_dot_param, Dot end_dot_param, int distance_param ){
-    start_dot = start_dot_param;
-    end_dot = end_dot_param;
-    distance = distance_param;
+  Connection( Person start_person_param, Person end_person_param ){
+    start_person = start_person_param;
+    end_person = end_person_param;
   }
   
   void infect(){
@@ -104,7 +133,7 @@ class Connection {
     shape(line);
   }
   
-  PVector getMarginalPoint (Dot d1, Dot d2) {
+  PVector getMarginalPoint (Person d1, Person d2) {
     PVector v = PVector.sub(d2.pos, d1.pos);
     v.normalize();
     v.mult(d1.r + distance);
@@ -112,30 +141,28 @@ class Connection {
   }
   
   PVector getStartingPoint() {
-    return getMarginalPoint( start_dot, end_dot );
+    return getMarginalPoint( start_person, end_person );
   }
   
   PVector getEndPoint (){
-    return getMarginalPoint( end_dot, start_dot );
+    return getMarginalPoint( end_person, start_person );
   }
 }
 
 
-class Dot {
+class Person {
   boolean infected = false;
+  boolean dead = false;
+  int life = 50 ;
+  
   PVector pos = new PVector(0 , 0);
   float r = 5.0;
   
-  Dot ( float x_param, float y_param ){
+  Person ( float x_param, float y_param ){
     pos = new PVector( x_param, y_param );
   }
   
-  Dot ( float x_param, float y_param, float radius_param ){
-    pos = new PVector( x_param, y_param );
-    r = radius_param;
-  }
-  
-  void flee( Dot d ){
+  void flee( Person d ){
     PVector v = PVector.sub(pos, d.pos);
     v.normalize();
     pos = PVector.add(pos , v);
@@ -163,6 +190,15 @@ class Dot {
   
   void infect (){
     infected = true;
+  }
+
+  void check_health(){
+    if( infected ){
+      if( life < 1 ){
+        dead = true;
+      }
+      life -= disease.severity;
+    }
   }
   
   void draw (){
