@@ -1,14 +1,17 @@
-color grey;
-color black;
+color grey = color(153);
+color black = color(0);
+color red = color(204, 0, 0);
+
 Dots dots;
 float min_distance = 30.0;
 
 void setup(){
   size(600,600);
   smooth(8);
-  grey = color(153);
-  black = color(0);
-  dots = new Dots(180);
+  int amount = 180;
+  dots = new Dots(amount);
+  dots.dots[ floor( random(amount)) ].infect() ;
+  
 }
 
 void draw(){
@@ -20,6 +23,11 @@ void draw(){
         i.flee( j );
         i.bounce();
         Connection c = new Connection( i, j );
+        if( i.infected || j.infected ){
+          j.infect();
+          i.infect();
+          c.infect();
+        }
         c. draw();
       }
     }
@@ -70,6 +78,7 @@ class Connection {
   PShape line;
   
   int distance = 2;
+  boolean infected = false;
   
   Connection( Dot start_dot_param, Dot end_dot_param ){
     start_dot = start_dot_param;
@@ -82,11 +91,16 @@ class Connection {
     distance = distance_param;
   }
   
+  void infect(){
+    infected = true;
+  }
+  
   void draw (){
     PVector v1 = getStartingPoint();
     PVector v2 = getEndPoint();
     line = createShape( LINE, v1.x, v1.y, v2.x, v2.y );
-    stroke(black);
+    color c = infected ? red : black ;
+    stroke( c );
     shape(line);
   }
   
@@ -108,7 +122,7 @@ class Connection {
 
 
 class Dot {
-
+  boolean infected = false;
   PVector pos = new PVector(0 , 0);
   float r = 5.0;
   
@@ -147,10 +161,15 @@ class Dot {
     }
   }
   
+  void infect (){
+    infected = true;
+  }
+  
   void draw (){
     PShape circle = createShape( ELLIPSE, pos.x, pos.y, r, r);
-    fill( black );
-    stroke( black );
+    color c = infected ? red : black;
+    circle.setFill( c );
+    circle.setStroke( c );
     shape( circle );
   }
 }
