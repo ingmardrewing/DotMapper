@@ -7,28 +7,27 @@ void setup(){
   smooth(8);
   grey = color(153);
   black = color(0);
-  dots = new Dots();
-      
-
+  dots = new Dots(60);
 }
 
 void draw(){
  background (grey);
  for( Dot i : dots.dots ){
-    i.draw();
+    for( Dot j: dots.dots ){
+      if( i.pos.dist(j.pos) < Dot.MIN_DISTANCE ){
+        i.wander();
+        i.flee( j );
+        i.bounce();
+        Connection c = new Connection( i, j );
+        c. draw();
+      }
+    }
+   i.draw();
  }
- /*
- 
- Connection c1 = new Connection( d1, d2);
- d1.draw();
- d2.draw();
- c1.draw();
- */
 }
 
 class Dots {
   int amount = 20;
-  float padding = 10;
   Dot[] dots;
   
   Dots( int amount_param ){
@@ -54,7 +53,7 @@ class Dots {
   }
   
   float get_random_num ( float max ){
-    return random( max - 2 * padding) + padding ;
+    return random( max - 2 * Dot.PADDING) + Dot.PADDING ;
   }
   
   void populate(){
@@ -108,6 +107,9 @@ class Connection {
 
 
 class Dot {
+  static final float MIN_DISTANCE = 30.0 ;
+  static final float PADDING = 30.0;
+
   PVector pos = new PVector(0 , 0);
   float r = 5.0;
   
@@ -118,6 +120,32 @@ class Dot {
   Dot ( float x_param, float y_param, float radius_param ){
     pos = new PVector( x_param, y_param );
     r = radius_param;
+  }
+  
+  void flee( Dot d ){
+    PVector v = PVector.sub(pos, d.pos);
+    v.normalize();
+    pos = PVector.add(pos , v);
+  }
+  
+  void wander(){
+    PVector r = PVector.random2D();
+    pos = PVector.add(pos, r);
+  }
+  
+  void bounce(){
+    if( pos.x < PADDING ){
+      pos = new PVector( pos.x + 1, pos.y );
+    }
+    else if ( pos.x > width - PADDING ){
+      pos = new PVector( pos.x - 1, pos.y );
+    }
+    if( pos.y < PADDING ){
+      pos = new PVector( pos.x, pos.y + 1 );
+    }
+    else if( pos.y > height - PADDING ){
+      pos = new PVector( pos.x, pos.y - 1 );
+    }
   }
   
   void draw (){
