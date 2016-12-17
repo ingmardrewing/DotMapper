@@ -1,20 +1,21 @@
 color grey;
 color black;
 Dots dots;
+float min_distance = 30.0;
 
 void setup(){
-  size(300,300);
+  size(600,600);
   smooth(8);
   grey = color(153);
   black = color(0);
-  dots = new Dots(60);
+  dots = new Dots(180);
 }
 
 void draw(){
  background (grey);
  for( Dot i : dots.dots ){
     for( Dot j: dots.dots ){
-      if( i.pos.dist(j.pos) < Dot.MIN_DISTANCE ){
+      if( i.pos.dist(j.pos) < min_distance ){
         i.wander();
         i.flee( j );
         i.bounce();
@@ -53,7 +54,7 @@ class Dots {
   }
   
   float get_random_num ( float max ){
-    return random( max - 2 * Dot.PADDING) + Dot.PADDING ;
+    return random( max - 2 * min_distance) + min_distance ;
   }
   
   void populate(){
@@ -107,8 +108,6 @@ class Connection {
 
 
 class Dot {
-  static final float MIN_DISTANCE = 30.0 ;
-  static final float PADDING = 30.0;
 
   PVector pos = new PVector(0 , 0);
   float r = 5.0;
@@ -134,16 +133,16 @@ class Dot {
   }
   
   void bounce(){
-    if( pos.x < PADDING ){
+    if( pos.x < min_distance ){
       pos = new PVector( pos.x + 1, pos.y );
     }
-    else if ( pos.x > width - PADDING ){
+    else if ( pos.x > width - min_distance ){
       pos = new PVector( pos.x - 1, pos.y );
     }
-    if( pos.y < PADDING ){
+    if( pos.y < min_distance ){
       pos = new PVector( pos.x, pos.y + 1 );
     }
-    else if( pos.y > height - PADDING ){
+    else if( pos.y > height - min_distance ){
       pos = new PVector( pos.x, pos.y - 1 );
     }
   }
