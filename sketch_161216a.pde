@@ -24,15 +24,25 @@ void draw(){
 class Disease {
   int severity = 1;
   color c ;
+  int variant = 0;
   
   Disease(){
     color[] colors = {red, green, blue};
-    c = colors[ floor( random(colors.length)) ] ;
+    variant = floor( random(colors.length));
+    c = colors[ variant ] ;
   }
   
-  void sicken( Person person ){
-    person.c = c;
-    person.life -= severity;
+  void sicken( Person person ){    
+    if( variant == 1 ){
+      person.r = 10 ;
+    }
+    else if( variant == 2 ){
+      person.shape = RECT;
+    }
+    else{
+      person.life -= severity;
+      person.c = c;
+    }
   }
   
   void sicken( Connection connection ){
@@ -102,7 +112,6 @@ class Population {
     
   void check_for_infection(){
     if( frames_until_infection-- < 1 ){
-      print("infecting\n");
       Disease disease = new Disease();
       persons[ floor( random(persons.length)) ].infect(disease) ;
       frames_until_infection = 200;
@@ -116,11 +125,11 @@ class Person {
   boolean infected = false;
   boolean alive = true;
   int life = 100 ;
+  int shape = ELLIPSE;
   
   PVector pos = new PVector(0, 0);
   float r = 5.0;
-  Disease disease;
-  
+  ArrayList<Disease> diseases  = new ArrayList<Disease>() ; 
   color c = black;
   
   Person ( float x_param, float y_param ){
@@ -154,16 +163,20 @@ class Person {
   }
   
   void infect (Disease d){
-    disease = d;
+    if( ! diseases.contains( d ) ){
+      diseases.add(d);
+    }
   }
   
   boolean is_infected (){
-    return null != disease ;
+    return diseases.size() > 0;
   }
 
   void check_health(){
     if( is_infected() ){
-      disease.sicken( this );
+      for( Disease d : diseases ){
+        d.sicken(this);
+      }
       if( life < 1 ){
         alive = false;
       }
@@ -181,13 +194,17 @@ class Person {
       Connection c = new Connection( this, b );
       
       if( is_infected() ){
-        b.infect(disease);
-        c.infect(disease);
+        for( Disease d : diseases ){
+          b.infect( d );
+          c.infect( d );
+        }
       }
       
       if( b.is_infected() ){
-        infect( b.disease );
-        c.infect( b.disease );
+        for( Disease d : b.diseases ){
+          infect( d );
+          c.infect( d );
+        }
       }
            
       c. draw();
@@ -195,13 +212,24 @@ class Person {
   }
   
   void draw (){
-    if( null != disease ){
-      disease.sicken(this);
+    if( is_infected() ){
+      for( Disease d : diseases ){
+        d.sicken(this);
+      }
     }
-    PShape circle = createShape( ELLIPSE, pos.x, pos.y, r, r);
-    circle.setFill( c );
-    circle.setStroke( c );
-    shape( circle );
+    
+    if( shape == ELLIPSE ){
+      PShape s = createShape( shape, pos.x, pos.y, r, r);
+      s.setFill( c );
+      s.setStroke( c );    
+      shape( s );
+    }
+    else{
+      PShape s = createShape( shape, pos.x - 0.5 * r, pos.y -0.5 *5, r, r);
+      s.setFill( c );
+      s.setStroke( c );    
+      shape( s );
+    }
   }
 }
 
