@@ -1,70 +1,75 @@
-color grey = color(204);
-color black = color(0);
-color red = color(204, 0, 0);
-color blue = color(0, 0, 204);
-color green = color(0, 153, 0);
-
 Population population;
 
-float min_distance = 30.0;
+float min_distance = 40.0;
+float reproduction_rate = 2.8;
+int max_life = 45;
+
+boolean diseases = true;
+int frames_until_infection = 140;
 
 void setup(){
   size(600,600);
   smooth(8);
-  population = new Population( 200 );
+  population = new Population( 100 );
+}
+
+int dir = -1;
+int val = 255;
+color getColor( int v ){
+  if( v >= 255 ){
+    dir = -1;
+  }
+  if( v <= 0 ){
+    dir = 1;
+  }
+  return v + dir;
 }
 
 void draw(){
-  background (grey);
-  population.check_for_infection();
-  population.socialize();
-  population.bury_the_dead();
+  reproduction_rate = 255.0 / float( population.persons.length );
+  
+  ArrayList<Connection> connections = population.update();
+
+  background( 204 );
+
+  for( Connection c : connections ){  
+      if( null != c.disease ){
+        c.disease.sicken(c);
+      }
+      PVector v1 = c.getStartingPoint();
+      PVector v2 = c.getEndPoint();
+     
+      stroke( 0 );
+      
+      line( v1.x, v1.y, v2.x, v2.y );
+  }
+  
+  for ( Person p : population.persons ){
+      stroke( 0 );
+      fill( 0 );
+      ellipse( p.pos.x, p.pos.y, p.r , p.r  );
+  }
+  
 }
 
 class Disease {
   int severity = 1;
-  color c ;
+  color c = color(204, 0 , 0) ;
   int variant = 0;
-  
-  Disease(){
-    color[] colors = {red, green, blue};
-    variant = floor( random(colors.length));
-    c = colors[ variant ] ;
-  }
-  
+    
   void sicken( Person person ){    
-    if( variant == 1 ){
-      person.r = 10 ;
-    }
-    else if( variant == 2 ){
-      person.shape = RECT;
-    }
-    else{
-      person.life -= severity;
-      person.c = c;
-    }
+    person.col = c ;
   }
   
   void sicken( Connection connection ){
-    connection.c = c;
+    connection.col = c;
   }
 }
 
 class Population {
-  int size = 20;
-  int frames_until_infection = 90;
   Person[] persons;
   
-  Population( int size_param ){
-    size = size_param;
-    init();
-  }
-  
-  Population(){
-    init();
-  } 
-
-  void init(){
+  Population( int size ){
     persons = new Person[size];
     populate();
   }
@@ -87,53 +92,90 @@ class Population {
     }
   }
   
-  void socialize(){
+  ArrayList<Connection> socialize(){
+    ArrayList<Connection> connections = new ArrayList<Connection>();
     for( Person i : persons ){
       i.move_ambiently();
       for( Person j: persons ){
-        if( i != j ){
-          i.meets( j );
+        if( i != j && i.pos.dist(j.pos) < min_distance ){
+           connections.add( i.meets( j ) );
+          }
         }
-      }
       i.check_health();
-      i.draw();
+    }
+    return connections;
+  }
+  
+  void age(){
+    for ( Person p : persons ){
+      p.age();
     }
   }
   
   void bury_the_dead(){
     ArrayList<Person> survivors = new ArrayList<Person>();
     for ( Person p : persons ){
-      if( p.alive ){
+      if( p.is_alive() ){
         survivors.add(p);
       }
     }
     persons = survivors.toArray(new Person[survivors.size()]);
   }
+  
+  void reproduce(){
+    ArrayList<Person> new_pop = new ArrayList<Person>();
+    for ( Person p :persons ){
+      new_pop.add( p );
+      if( p.connected ){
+        float prob = random( 100 );
+        if( prob < reproduction_rate ){
+          new_pop.add( new Person( p.pos.x, p.pos.y ) );
+        }
+      }
+    }
+    persons = new_pop.toArray(new Person[new_pop.size()]);
+  }
     
   void check_for_infection(){
+    if ( diseases ){
     if( frames_until_infection-- < 1 ){
       Disease disease = new Disease();
       persons[ floor( random(persons.length)) ].infect(disease) ;
-      frames_until_infection = 200;
+      frames_until_infection = 100;
     }
+    }
+  }
+
+  ArrayList<Connection> update (){
+    if( persons.length == 0 ){
+      return null;
+    }
+    age();
+    check_for_infection();
+    reproduce();
+    ArrayList<Connection> connections = socialize();
+    bury_the_dead();
+    return connections;
   }
 }
 
-
-
 class Person {
-  boolean infected = false;
-  boolean alive = true;
-  int life = 100 ;
+  int life = max_life ;
+  
+  boolean connected = false;
   int shape = ELLIPSE;
+  color col = color( 0 );
   
   PVector pos = new PVector(0, 0);
   float r = 5.0;
   ArrayList<Disease> diseases  = new ArrayList<Disease>() ; 
-  color c = black;
   
   Person ( float x_param, float y_param ){
     pos = new PVector( x_param, y_param );
+  }
+  
+  void age(){
+    life--;
   }
   
   void flee( Person d ){
@@ -171,14 +213,15 @@ class Person {
   boolean is_infected (){
     return diseases.size() > 0;
   }
+  
+  boolean is_alive () {
+    return life > 0;
+  }
 
   void check_health(){
     if( is_infected() ){
       for( Disease d : diseases ){
         d.sicken(this);
-      }
-      if( life < 1 ){
-        alive = false;
       }
     }
   }
@@ -188,88 +231,55 @@ class Person {
     bounce();
   }
   
-  void meets( Person b ){
-    if( pos.dist(b.pos) < min_distance ){
-      flee( b );
-      Connection c = new Connection( this, b );
-      
-      if( is_infected() ){
-        for( Disease d : diseases ){
-          b.infect( d );
-          c.infect( d );
-        }
-      }
-      
-      if( b.is_infected() ){
-        for( Disease d : b.diseases ){
-          infect( d );
-          c.infect( d );
-        }
-      }
-           
-      c. draw();
-    }
-  }
-  
-  void draw (){
+  Connection meets( Person b ){
+    connected = true ;
+    flee( b );
+    Connection c = new Connection( this, b );
+    
     if( is_infected() ){
       for( Disease d : diseases ){
-        d.sicken(this);
+        b.infect( d );
+        c.infect( d );
       }
     }
     
-    if( shape == ELLIPSE ){
-      PShape s = createShape( shape, pos.x, pos.y, r, r);
-      s.setFill( c );
-      s.setStroke( c );    
-      shape( s );
+    if( b.is_infected() ){
+      for( Disease d : b.diseases ){
+        infect( d );
+        c.infect( d );
+      }
     }
-    else{
-      PShape s = createShape( shape, pos.x - 0.5 * r, pos.y -0.5 *5, r, r);
-      s.setFill( c );
-      s.setStroke( c );    
-      shape( s );
-    }
+         
+      return c;
   }
 }
-
-
 
 class Connection {
   Person start_person;
   Person end_person;
-  PShape line;
-  color c;
   Disease disease;
   
-  int distance = 2;
-  boolean infected = false;
+  color col = color ( 0 );
+  
+  int distance = 0;
   
   Connection( Person start_person_param, Person end_person_param ){
     start_person = start_person_param;
     end_person = end_person_param;
-    c = black;
   }
   
   void infect(Disease d){
     disease = d;
   }
   
-  void draw (){
-    if( null != disease ){
-      disease.sicken(this);
-    }
-    PVector v1 = getStartingPoint();
-    PVector v2 = getEndPoint();
-    line = createShape( LINE, v1.x, v1.y, v2.x, v2.y );
-    line.setStroke(c);
-    shape(line);
+  boolean is_infected () {
+    return null != disease;
   }
   
   PVector getMarginalPoint (Person d1, Person d2) {
     PVector v = PVector.sub(d2.pos, d1.pos);
     v.normalize();
-    v.mult(d1.r + distance);
+    v.mult(d1.r - 1);
     return PVector.add(d1.pos , v);
   }
   
