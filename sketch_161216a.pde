@@ -2,7 +2,7 @@ Population population;
 
 float min_distance = 40.0;
 float reproduction_rate = 2.8;
-int max_life = 45;
+int max_life = 100;
 
 boolean diseases = true;
 int frames_until_infection = 140;
@@ -26,27 +26,29 @@ color getColor( int v ){
 }
 
 void draw(){
-  reproduction_rate = 255.0 / float( population.persons.length );
+  reproduction_rate = 200.0 / float( population.persons.length );
   
   ArrayList<Connection> connections = population.update();
 
   background( 204 );
 
-  for( Connection c : connections ){  
-      if( null != c.disease ){
-        c.disease.sicken(c);
-      }
-      PVector v1 = c.getStartingPoint();
-      PVector v2 = c.getEndPoint();
-     
-      stroke( 0 );
-      
-      line( v1.x, v1.y, v2.x, v2.y );
+  if( connections != null ){
+    for( Connection c : connections ){  
+        if( null != c.disease ){
+          c.disease.sicken(c);
+        }
+        PVector v1 = c.getStartingPoint();
+        PVector v2 = c.getEndPoint();
+       
+        stroke( c.col );
+        
+        line( v1.x, v1.y, v2.x, v2.y );
+    }
   }
   
   for ( Person p : population.persons ){
-      stroke( 0 );
-      fill( 0 );
+      stroke( p.col );
+      fill( p.col );
       ellipse( p.pos.x, p.pos.y, p.r , p.r  );
   }
   
@@ -57,7 +59,9 @@ class Disease {
   color c = color(204, 0 , 0) ;
   int variant = 0;
     
-  void sicken( Person person ){    
+  void sicken( Person person ){   
+    person.life -= severity;
+    person.r += severity;
     person.col = c ;
   }
   
@@ -138,11 +142,11 @@ class Population {
     
   void check_for_infection(){
     if ( diseases ){
-    if( frames_until_infection-- < 1 ){
-      Disease disease = new Disease();
-      persons[ floor( random(persons.length)) ].infect(disease) ;
-      frames_until_infection = 100;
-    }
+      if( frames_until_infection-- < 1 ){
+        Disease disease = new Disease();
+        persons[ floor( random(persons.length)) ].infect(disease) ;
+        frames_until_infection = 100;
+      }
     }
   }
 
